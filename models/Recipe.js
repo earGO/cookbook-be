@@ -39,7 +39,7 @@ const mongoose = require('mongoose'),
         }],
         author: {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: 'users'
+                ref: 'Users'
             }
 
     })
