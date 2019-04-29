@@ -7,6 +7,7 @@ router.get('/', (req, res) => {
 });
 
 router.get('/all', recipes.getAll);
-router.get('/:id',recipes.getOne)
+router.get('/:id',recipes.getOne);
+router.get('/current/:id',recipes.current)
 
 module.exports = router;
