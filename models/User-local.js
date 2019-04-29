@@ -15,5 +15,5 @@ const mongoose = require('mongoose'),
 
     })
 
-module.exports = mongoose.model('usersLocal',UserSchema)
+module.exports = mongoose.model('usersLocals',UserSchema)
 

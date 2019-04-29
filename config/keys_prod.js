@@ -6,5 +6,8 @@ module.exports = {
     CALLBACK_URL : process.env.CALLBACK_URL,
 
     /*======================MongoDB credent========================*/
-    MONGODB_URI : "mongodb://localhost/cookbook-dev-local"
+    MONGODB_URI : "mongodb://localhost/cookbook-dev-local",
+
+    /*======================CORS domains whitelist========================*/
+    WHITELIST : process.env.WHITELIST,
 }
