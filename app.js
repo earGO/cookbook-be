@@ -14,7 +14,8 @@ const
 
     //routers
     auth = require('./routers/auth'),
-    recipes = require('./routers/recipes');
+    recipes = require('./routers/recipes'),
+    search = require('./routers/search');
 
 
 seedDB();
@@ -47,6 +48,7 @@ app.get('/', (req, res, next) => {
 
 app.use('/auth',auth);
 app.use('/recipes',recipes);
+app.use('/search',search);
 
 app.listen(port, function () {
     console.log('server up and running on port', port)
