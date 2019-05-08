@@ -12,6 +12,12 @@ const mongoose = require('mongoose'),
         },
         lastName:String,
         image:String,
+        weekplans: [{
+            weekplan: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'weekplans'
+            }
+        }],
 
     })
 
