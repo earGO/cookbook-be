@@ -1,4 +1,6 @@
 
+import { seedDB } from './seeds';
+
 const
     express = require('express'),
     bodyParser = require('body-parser'),
@@ -9,8 +11,9 @@ const
 
     //keys
     keys = require('./config/keys'),
-    //seed function
-    seedDB = require('./seeds'),
+
+    //test controllers functions
+    dayCreator = require('./functions/dayCreator'),
 
     //routers
     auth = require('./routers/auth'),
@@ -19,6 +22,7 @@ const
 
 
 seedDB();
+
 
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({extended: true}));

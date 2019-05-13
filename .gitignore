@@ -67,3 +67,7 @@ seeds.js
 # env variables
 .env
 .env*
+
+# tests
+*.test.js
+*config.js

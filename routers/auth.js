@@ -1,5 +1,5 @@
 const express = require('express'),
-    mongoose = require('mongoose');
+    mongoose = require('mongoose'),
     router = express.Router(),
         auth = require('../controllers/auth');
 

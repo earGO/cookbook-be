@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose'),
 
 WeekplanSchema = new mongoose.Schema({
     dayplans: [{
@@ -6,7 +6,8 @@ WeekplanSchema = new mongoose.Schema({
             type: mongoose.Schema.Types.ObjectId,
             ref: 'dayplans'
         }
-    }]
+    }],
+    weekNumber:Number
 });
 
 module.exports = mongoose.model('weekplans', WeekplanSchema, 'weekplans');

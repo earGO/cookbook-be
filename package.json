@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "golocal": "node -r dotenv/config app.js",
-    "start": "node app.js"
+    "start": "nodemon app.js --exec babel-node --presets babel-preset-env",
+    "test": "jest --watchAll"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -25,6 +26,11 @@
     "passport-local": "^1.0.0"
   },
   "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.3",
+    "babel-loader": "^8.0.6",
+    "babel-preset-env": "^1.7.0",
+    "jest": "^24.8.0",
     "nodemon": "^1.18.11"
   }
 }

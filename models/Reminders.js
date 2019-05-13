@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose'),
 
 ReminderSchema = new mongoose.Schema({
     name: String,
