@@ -18,21 +18,9 @@ DayPlanSchema = new mongoose.Schema({
         },
     }],
     /*theese are todos for YESTERDAY from all recipes, needed preparation the day, prior to this one*/
-    todosY: [{
-        todo: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'todos',
-            default:[]
-        }
-    }],
+    todosY: [String],
     /*theese are todos for the morning from all evening recipes*/
-    todosM: [{
-        todo: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'todos',
-            default:[]
-        }
-    }],
+    todosM: [String],
     date:Date,
     groceryDay:{
         type:Boolean,
