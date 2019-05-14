@@ -1,9 +1,10 @@
-import {getRandomInt,addSomeDays} from "./_common";
+import { getRandomInt,addSomeDays,arrayConvoluter,objectClone } from "./_common";
 
 const
     Dayplan = require('../models/Dayplans'),
     Recipe = require('../models/Recipe'),
-    Weekplan = require('../models/Weekplans');
+    Weekplan = require('../models/Weekplans'),
+    ActualDay = require('../models/ActualDay');
 
 /*THIS MODULE CREATES A CURRENT DAY DATA
 * and then sends it as a response to frontend*/
@@ -12,37 +13,19 @@ const
 let today = new Date();
 today.setHours(0,0,0,0);
 const tommorow = addSomeDays(today,3);
-today = tommorow
 
-export const arrayConvoluter = (array) =>{
-    let retArray = [];
-    const suckOne = (arr) =>{
-        let result = arr.shift();
-        arr.forEach((item,key)=>{
-            if(item.name===result.name){
-                result.amount = (parseInt(result.amount)+parseInt(item.amount)).toString()
-                arr.splice(key,1)
-            }
-        })
-        return result;
-    };
-    while (array.length){
-        retArray.push(suckOne(array))
-    }
-    return retArray
-};
+/**main goals are
+When FrontEnd sends first request for Day's data, it happens from Dashboard (first start screen).
+ This module checks, if all data needed is avaliable - and does some job if it's not
+ It then makes DashboardDay object and sends it back to FE.
 
-/*main goals are
+ It is important, that User ALWAYS started from dashboard. And Dashboard is main working screen for day-to-day use
+ anyways.
 
-*
-*
+ When User needs to manage dayplans, or weekplans, he sends another request from another screen, and this job does
+ another module.
 
-* 6. check if some of the recipes in a day object were already cooked today
-*
-* 7. The result of this module will be an object, containing
-*   a. the next uncooked recipe for today
-*   b. reminders, if there are any
-*   c. todos, if there are any*/
+*/
 
 export const dayCreator = async function() {
     const DATES_ARRAY=[today,addSomeDays(today,1)];
@@ -54,6 +37,7 @@ export const dayCreator = async function() {
     })
     const TWO_DAYS = await Promise.all(arrayOfDaysPromises);
     const TODAY = TWO_DAYS[0];
+    const TOMMOROW = TWO_DAYS[1];
 
     /*2. Check if it's todosY and todosM filled (no recipe has empty todosM)
     * 3. Fill if not. If none of recipes has any preparation time - fill with 'no prep needed' single value*/
@@ -61,8 +45,11 @@ export const dayCreator = async function() {
         /*variables for filling todos from tommorow and from today*/
         let todaysRecipes = [],
             prepStepsY =[],
-            prepStepsM = [];
+            prepStepsM = [],
+            dayDate = day.date;
         if(!day.todosY.length||!day.todosM.length){
+            console.log('\n/*+++++++++++++++++++++++++++*/\nediting day\n',day);
+            console.log('have date: ',dayDate);
             day.meals.forEach(meal=>{
                 todaysRecipes.push(meal.recipe)
             });
@@ -81,14 +68,13 @@ export const dayCreator = async function() {
                 })
             });
             /*fill the day with data after preparing it*/
-            await Dayplan.findOne({date:today},(err,todayDayplan)=>{
+            await Dayplan.findOne({date:dayDate},(err,todayDayplan)=>{
                 if(!err){
-                    console.log(Dayplan)
                     todayDayplan.todosY = prepStepsY;
                     todayDayplan.todosM = prepStepsM;
                     todayDayplan.save()
                         .then(editedDayplan=>{
-                            console.log(editedDayplan)
+                            console.log('edited todosY and todosM in dayplan')
                         })
                 }
             })
@@ -96,16 +82,16 @@ export const dayCreator = async function() {
 
     });
 
-    /** 4. Check if it's grocery day or not
+    /** 4. Check if it's grocery day or not & if there already is Groceries list
      * 5. If it is - create grocerie list for today
-     * made through terrible KOSTYL for now not to be stuck
+     * made through terrible CRUTCH for now not to be stuck
      **/
     /*variable for all sources of groceries for the list*/
     let groceriesSourses = [];
     /*variables to stop cycling through dayplans in search of a next groceryDay*/
         let searchDatesArray = [];
         let nextGroceryDay = false
-    if(TODAY.groceryDay){
+    if(TODAY.groceryDay && !TODAY.groceries.length){
             /*create array of dates to cycle through in search of next grocery day*/
         for(let i=1;i<14;i++){
             searchDatesArray.push(addSomeDays(today,i))
@@ -151,13 +137,53 @@ export const dayCreator = async function() {
             })
             })
         });
+        /*save prepared grocery list*/
        TODAY.groceries = arrayConvoluter(groceries)
         TODAY.save()
             .then(newDayplan=>{
-                console.log(newDayplan)
+                console.log('grocerielist added and saved')
             })
-
-        /*save prepared grocery list*/
     }
+    /**
+     * Finally make an object to return as request result
+     * each day collected all todos from it's recipes and have them put in two arrays
+     * the todoY array has the actions for YESTERDAY's todos
+     * the todoM array has the actions for TODAY's todos
+     * So while constructing the Day object to be returned as a respinse
+     * We take todosY FROM TOMMOROW, and todosM from TODAY*/
+    let dayObject = Object.assign({},TODAY._doc);
+    delete dayObject.todosY
+    Dayplan.findOne({date:addSomeDays(today,1)},async (err,tomorrowDay)=>{
+        if(!err){
+            let tommorowTodos = tomorrowDay.todosY,
+                todayTodos = dayObject.todosM,
+                allTodos = tommorowTodos.concat(todayTodos);
+            /*create Todos array fin needed format*/
+            const todosObjects = allTodos.map(todo=>{
+                return {
+                    todo:todo,
+                    active:true
+                }
+            });
+            /*Prepared ToDos, along with the day's info needed to be stored in a separate MonoDB collection
+            * so App can fetch them later that day
+            * So when user completes ToDos, cooks recipes, and so on - an App can keep info actual in Database*/
+            const ACTUAL_DAY={
+                reminders: dayObject.reminders,
+                meals: dayObject.meals,
+                todos:todosObjects,
+                date:dayObject.date,
+                groceryDay:dayObject.groceryDay,
+                groceries:dayObject.groceries
+            }
+            await new ActualDay (ACTUAL_DAY)
+                .save()
+                .then(ActualDay=>{
+                    console.log('new ActualDay created in dayCreator:\n',ActualDay)
+                })
+                .catch(err=>console.log('error creating ActualDay in DayCreator'))
+        }
+    })
+
 
 };
