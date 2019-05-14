@@ -14,6 +14,24 @@ today.setHours(0,0,0,0);
 const tommorow = addSomeDays(today,3);
 today = tommorow
 
+export const arrayConvoluter = (array) =>{
+    let retArray = [];
+    const suckOne = (arr) =>{
+        let result = arr.shift();
+        arr.forEach((item,key)=>{
+            if(item.name===result.name){
+                result.amount = (parseInt(result.amount)+parseInt(item.amount)).toString()
+                arr.splice(key,1)
+            }
+        })
+        return result;
+    };
+    while (array.length){
+        retArray.push(suckOne(array))
+    }
+    return retArray
+};
+
 /*main goals are
 
 *
@@ -67,9 +85,7 @@ export const dayCreator = async function() {
                 if(!err){
                     console.log(Dayplan)
                     todayDayplan.todosY = prepStepsY;
-
                     todayDayplan.todosM = prepStepsM;
-
                     todayDayplan.save()
                         .then(editedDayplan=>{
                             console.log(editedDayplan)
@@ -102,7 +118,6 @@ export const dayCreator = async function() {
         /*Cycle through array until next grocery day found*/
         searchDays.map(singleDay=>{
             if(singleDay.length && !nextGroceryDay){
-                console.log(singleDay[0].groceryDay)
                 groceriesSourses.push(singleDay[0].meals)
                 if(singleDay[0].groceryDay){
                     console.log('found groceryDay');
@@ -119,17 +134,28 @@ export const dayCreator = async function() {
         });
         /*create sync array of Recipes data to work with*/
         const arrayOfRecipePromises = ingredSourceFinal.map(source=>{
-            console.log(source)
             return Recipe.findOne({_id:source}).exec()
         });
-        console.log(arrayOfRecipePromises)
         const RECIPE_SOURCE_DATA = await Promise.all(arrayOfRecipePromises);
         /*compose ingreds arrays*/
-
-        /*add ingreds from first recipe*/
-
-        /*cycle through other recipes - if found new ingred, add it;
-        * if found existing ingred - sum amounts*/
+        let groceries = [];
+        RECIPE_SOURCE_DATA.map(recipe=>{
+            recipe.ingredients.map(singleIngredient=>{
+                let ingredName = singleIngredient.name,
+                    ingredAmount = singleIngredient.measure.split(/[a-z]/i).shift(),
+                    ingredMeasurement = singleIngredient.measure.split(/[0-9]/g).pop().split(' ').pop();
+            groceries.push({
+                name:ingredName,
+                amount:ingredAmount,
+                measurement: ingredMeasurement
+            })
+            })
+        });
+       TODAY.groceries = arrayConvoluter(groceries)
+        TODAY.save()
+            .then(newDayplan=>{
+                console.log(newDayplan)
+            })
 
         /*save prepared grocery list*/
     }

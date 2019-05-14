@@ -26,6 +26,11 @@ DayPlanSchema = new mongoose.Schema({
         type:Boolean,
         default:false
     },
+    groceries:[{
+        name:String,
+        amount:String,
+        measurement:String
+    }]
 });
 
 module.exports = mongoose.model('dayplans', DayPlanSchema, 'dayplans');
