@@ -1,21 +1,16 @@
 const mongoose = require('mongoose'),
 
 ActualDaySchema = new mongoose.Schema({
+    dayplanID:String,
     reminders: [{
-        reminder: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'reminders'
-        }
+        active:Boolean,
+        content:String
     }],
     meals: [{
-        recipe: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'recipes'
-        },
-        cooked:{
-            type:Boolean,
-            default:false
-        },
+        recipeID:String,
+        recipeName:String,
+        recipeImage:String,
+        recipeCooked:Boolean,
     }],
     /*theese are todos for YESTERDAY from all recipes, needed preparation the day, prior to this one*/
     todos:[

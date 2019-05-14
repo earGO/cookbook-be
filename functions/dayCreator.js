@@ -4,7 +4,8 @@ const
     Dayplan = require('../models/Dayplans'),
     Recipe = require('../models/Recipe'),
     Weekplan = require('../models/Weekplans'),
-    ActualDay = require('../models/ActualDay');
+    ActualDay = require('../models/ActualDay'),
+    Reminder = require('../models/Reminders');
 
 /*THIS MODULE CREATES A CURRENT DAY DATA
 * and then sends it as a response to frontend*/
@@ -29,7 +30,6 @@ When FrontEnd sends first request for Day's data, it happens from Dashboard (fir
 
 export const dayCreator = async function() {
     const DATES_ARRAY=[today,addSomeDays(today,1)];
-
    /*retrieve today's day as sync object for easing of the work*/
     /*first check if today's day has todosY and todosM, not to do unnesessary work*/
     const arrayOfDaysPromises = DATES_ARRAY.map(date=>{
@@ -38,7 +38,6 @@ export const dayCreator = async function() {
     const TWO_DAYS = await Promise.all(arrayOfDaysPromises);
     const TODAY = TWO_DAYS[0];
     const TOMMOROW = TWO_DAYS[1];
-
     /*2. Check if it's todosY and todosM filled (no recipe has empty todosM)
     * 3. Fill if not. If none of recipes has any preparation time - fill with 'no prep needed' single value*/
     await TWO_DAYS.forEach(async day=>{
@@ -138,7 +137,7 @@ export const dayCreator = async function() {
             })
         });
         /*save prepared grocery list*/
-       TODAY.groceries = arrayConvoluter(groceries)
+       TODAY.groceries = arrayConvoluter(groceries);
         TODAY.save()
             .then(newDayplan=>{
                 console.log('grocerielist added and saved')
@@ -151,37 +150,81 @@ export const dayCreator = async function() {
      * the todoM array has the actions for TODAY's todos
      * So while constructing the Day object to be returned as a respinse
      * We take todosY FROM TOMMOROW, and todosM from TODAY*/
-    let dayObject = Object.assign({},TODAY._doc);
-    delete dayObject.todosY
-    Dayplan.findOne({date:addSomeDays(today,1)},async (err,tomorrowDay)=>{
+    ActualDay.findOne({dayplanID:TODAY._id},(err,foundActualDay)=>{
         if(!err){
-            let tommorowTodos = tomorrowDay.todosY,
-                todayTodos = dayObject.todosM,
-                allTodos = tommorowTodos.concat(todayTodos);
-            /*create Todos array fin needed format*/
-            const todosObjects = allTodos.map(todo=>{
-                return {
-                    todo:todo,
-                    active:true
-                }
-            });
-            /*Prepared ToDos, along with the day's info needed to be stored in a separate MonoDB collection
-            * so App can fetch them later that day
-            * So when user completes ToDos, cooks recipes, and so on - an App can keep info actual in Database*/
-            const ACTUAL_DAY={
-                reminders: dayObject.reminders,
-                meals: dayObject.meals,
-                todos:todosObjects,
-                date:dayObject.date,
-                groceryDay:dayObject.groceryDay,
-                groceries:dayObject.groceries
-            }
-            await new ActualDay (ACTUAL_DAY)
-                .save()
-                .then(ActualDay=>{
-                    console.log('new ActualDay created in dayCreator:\n',ActualDay)
+            if(foundActualDay){
+                console.log('there is an Actual Day - doing nothing');
+            } else {
+                console.log('there is no actual day - need to create one');
+                let dayObject = Object.assign({},TODAY._doc);
+                delete dayObject.todosY;
+                Dayplan.findOne({date:addSomeDays(today,1)},async (err,tomorrowDay)=>{
+                    if(!err){
+                        let tommorowTodos = tomorrowDay.todosY,
+                            todayTodos = dayObject.todosM,
+                            allTodos = tommorowTodos.concat(todayTodos);
+                        /*create Todos array fin needed format*/
+                        const todosObjects = allTodos.map(todo=>{
+                            return {
+                                todo:todo,
+                                active:true
+                            }
+                        });
+                        /*populate Meals array with actual data from recipes, needed for Dashboard:
+                        * recipe ID
+                        * recipe name
+                        * recipe image*/
+                        const DAYMEALS = dayObject.meals;
+                        const ACTUAL_MEALS_PROMISES = DAYMEALS.map( meal=>{
+                            return Recipe.findOne({_id:meal.recipe}).exec()
+                        });
+                        const ACTUAL_MEALS = await Promise.all(ACTUAL_MEALS_PROMISES);
+                        const ACTUAL_MEALS_DATA = ACTUAL_MEALS.map((meal)=>{
+                            return({
+                                recipeID:meal._id,
+                                recipeName:meal.mealName,
+                                recipeImage:meal.image,
+                                recipeCooked:false,/*FALSE put by default, cause we R just creating our Actual Day.*/
+                            })
+                        });
+                        /**==================== REFACTOR REMINDERS =============================== */
+                        /*I'm still dragging this mock reminder array, so that i can use them in FrontEnd.
+                        * Eventually they will be generated by backend, but for now I'll have them this way */
+                        const REMINDERS = dayObject.reminders;
+                        const REMINDERS_PROMISES = REMINDERS.map(reminderID=>{
+                            return Reminder.findOne({_id:reminderID}).exec()
+                        });
+                        const REMINDERS_DATA = await Promise.all(REMINDERS_PROMISES);
+                        const REMINDERS_FOR_DAY = REMINDERS_DATA.map(reminder=>{
+                            return ({
+                                active:reminder.active,
+                                content:reminder.content,
+                                time:reminder.time
+                            })
+                        });
+                        /*Prepared ToDos, along with the day's info needed to be stored in a separate MonoDB collection
+                        * so App can fetch them later that day
+                        * So when user completes ToDos, cooks recipes, and so on - an App can keep info actual in Database*/
+                        const ACTUAL_DAY={
+                            dayplanID:dayObject._id,
+                            reminders: REMINDERS_FOR_DAY,
+                            meals: ACTUAL_MEALS_DATA,
+                            todos:todosObjects,
+                            date:dayObject.date,
+                            groceryDay:dayObject.groceryDay,
+                            groceries:dayObject.groceries
+                        };
+                         await new ActualDay (ACTUAL_DAY)
+                             .save()
+                             .then(ActualDay=>{
+                                 console.log('new ActualDay created in dayCreator:\n',ActualDay)
+                             })
+                             .catch(err=>console.log('error creating ActualDay in DayCreator'))
+                    }
                 })
-                .catch(err=>console.log('error creating ActualDay in DayCreator'))
+            }
+        } else {
+            console.log('error fetching actual day with ID: ',TODAY._id,'. Here what is wrong: \n',err)
         }
     })
 

@@ -7,6 +7,7 @@ ReminderSchema = new mongoose.Schema({
         type:Boolean,
         default:true
     },
+    time:String,
 });
 
 module.exports = mongoose.model('reminders', ReminderSchema, 'reminders');

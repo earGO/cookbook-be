@@ -1,12 +1,7 @@
 const mongoose = require('mongoose'),
 
 DayPlanSchema = new mongoose.Schema({
-    reminders: [{
-        reminder: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'reminders'
-        }
-    }],
+    reminders: [String],
     meals: [{
         recipe: {
             type: mongoose.Schema.Types.ObjectId,
