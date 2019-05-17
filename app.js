@@ -19,12 +19,12 @@ const
     auth = require('./routers/auth'),
     recipes = require('./routers/recipes'),
     search = require('./routers/search'),
-    day = require('./routers/day');
+    day = require('./routers/day'),
+    dashboard = require('./routers/dashboard'),
+    todos = require('./routers/todos');
 
 
 seedDB();
-
-dayCreator.dayCreator();
 
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({extended: true}));
@@ -55,7 +55,10 @@ app.get('/', (req, res, next) => {
 app.use('/auth',auth);
 app.use('/recipes',recipes);
 app.use('/search',search);
-app.use('/day',day)
+app.use('/day',day);
+app.use('/dashboard',dashboard);
+app.use('/todos',todos);
+
 
 app.listen(port, function () {
     console.log('server up and running on port', port)

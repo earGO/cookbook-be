@@ -10,11 +10,6 @@ const
 /*THIS MODULE CREATES A CURRENT DAY DATA
 * and then sends it as a response to frontend*/
 
-/*create an initial date for a dayplan fetching*/
-let today = new Date();
-today.setHours(0,0,0,0);
-const tommorow = addSomeDays(today,3);
-
 /**main goals are
 When FrontEnd sends first request for Day's data, it happens from Dashboard (first start screen).
  This module checks, if all data needed is avaliable - and does some job if it's not
@@ -28,7 +23,10 @@ When FrontEnd sends first request for Day's data, it happens from Dashboard (fir
 
 */
 
-export const dayCreator = async function() {
+export const dayCreator = async function(today) {
+
+    /*today must be of a Date type*/
+    today.setHours(0,0,0,0);
     const DATES_ARRAY=[today,addSomeDays(today,1)];
    /*retrieve today's day as sync object for easing of the work*/
     /*first check if today's day has todosY and todosM, not to do unnesessary work*/
@@ -217,7 +215,7 @@ export const dayCreator = async function() {
                          await new ActualDay (ACTUAL_DAY)
                              .save()
                              .then(ActualDay=>{
-                                 console.log('new ActualDay created in dayCreator:\n',ActualDay)
+                                 console.log('new ActualDay created in dayCreator:\n',ActualDay._id)
                              })
                              .catch(err=>console.log('error creating ActualDay in DayCreator'))
                     }
