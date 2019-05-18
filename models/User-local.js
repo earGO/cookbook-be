@@ -1,6 +1,6 @@
 const mongoose = require('mongoose'),
 
-    FacebookUserSchema = new mongoose.Schema({
+    UserSchema = new mongoose.Schema({
         name:String,
         email:{
             type:String,
@@ -12,8 +12,14 @@ const mongoose = require('mongoose'),
         },
         lastName:String,
         image:String,
+        weekplans: [{
+            weekplan: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'weekplans'
+            }
+        }],
 
     })
 
-module.exports = mongoose.model('users-local',FacebookUserSchema)
+module.exports = mongoose.model('usersLocals',UserSchema)
 

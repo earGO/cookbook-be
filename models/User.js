@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose'),
 
 const UserSchema = new mongoose.Schema({
         facebookID:{
@@ -15,4 +15,4 @@ const UserSchema = new mongoose.Schema({
 
     })
 
-module.exports = mongoose.model('Users',UserSchema)
+module.exports = mongoose.model('usersFacebook',UserSchema)

@@ -21,6 +21,15 @@ const mongoose = require('mongoose'),
             type: String,
             required: true
         },
+        prepSteps: [{
+            step:{
+                type: String,
+            },
+            yesterday:{
+                type: Boolean,
+                default: false
+            },
+        }],
         steps: [{
             step:{
                 type: String,
@@ -39,8 +48,12 @@ const mongoose = require('mongoose'),
         }],
         author: {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: 'users'
-            }
+                ref: 'Users'
+            },
+        examined: {
+            type: Boolean,
+            default: false
+        },
 
     })
 
